@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[% === SYMBOL MODULATOR DATA EXTRACTION ===
+
+% Step 1: Load the CSV file and preserve original column headers
+filename = '/MATLAB Drive/DVBS2_script/data_comparision/rtl_data/rtl_normal_qpsk_c8_9_constallationmapper_gs.csv';  % <-- Replace with your actual file name if different
+data = readtable(filename, 'VariableNamingRule', 'preserve');
+
+am_col = data{:,39};  % Hex values (e.g., '5a82a57e')
+an_col = data{:,40};  % Binary trigger values (0 or 1)
+
+% Step 3: Find the start index (after two consecutive 1s in AN)
+startIndex = -1;
+for i = 1:height(data)-1
+    if an_col(i) == 1 && an_col(i+1) == 1
+        startIndex = i + 2;
+        break;
+    end
+end
+
+% Step 4: Find the last index where AN == 1
+endIndex = find(an_col == 1, 1, 'last');
+
+% Step 5: Extract AM values between startIndex and endIndex
+if startIndex ~= -1 && endIndex >= startIndex
+    continuousData = am_col(startIndex:endIndex);
+else
+    disp('⚠️ Frame boundaries could not be determined.');
+    continuousData = [];
+end
+
+% Step 6: Assign to output and compare with golden reference
+rtl_symbolmodulator_data = continuousData;
+
+filename2  = '/MATLAB Drive/DVBS2_script/data_comparision/dvbs2_reversed_files/s2_symbolmodulator_hex.txt'
+
+compare_hex_files_32bit(rtl_symbolmodulator_data, filename2);]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[% ===PHYSCICA ===
+
+% Step 1: Read CSV file correctly
+filename = '/MATLAB Drive/DVBS2_script/data_comparision/rtl_data/rtl_gs_all_ones_normal_qpsk_c1_2_plframe.csv'; % Change to your actual file path
+opts = detectImportOptions(filename, 'VariableNamingRule', 'preserve'); % Preserve column names
+opts.DataLines = 3; % Skip first 2 rows (header)
+
+data = readtable(filename, opts);
+
+% Step 2: Extract HEX values from Columns D and E
+hex_tready = data{:, 41}; 
+hex_tvalid = data{:, 42}; % Column D (MATLAB index 4) - I values
+hex_pldata = data{:, 43}; % Column E (MATLAB index 5) - Q values
+
+% Step 3: Apply logical filtering (Extract hex_pldata where both conditions are 1)
+filtered_pldata = hex_pldata(hex_tready == 1 & hex_tvalid == 1);
+
+% Display the filtered data
+%disp(filtered_pldata);
+
+% Step 4: Save the filtered output (Optional)
+%writecell(filtered_pldata, 'filteredif length(data1) ~= length(data2)
+    %     error('Files have different numbers of lines');
+    % end_output.csv');
+%disp("data is extracted");
+data1 = filtered_pldata;
+
+filename2 = "/MATLAB Drive/DVBS2_script/data_comparision/dvbs2x_data/s2x_normal_qpsk_c8_9_gs/.txt"
+   % Call the function to compare the files
+compare_hex_files_32bit(data1, filename2);
+
+
+
+]]></w:t></w:r></w:p></w:body></w:document>
